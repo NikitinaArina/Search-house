@@ -21,7 +21,7 @@ public enum RenovationDto {
 
     public static RenovationDto getByRenovation(String renovation) {
         return Arrays.stream(RenovationDto.values())
-                .filter(f -> f.getRenovation().equals(renovation))
+                .filter(f -> f.getRenovation().equalsIgnoreCase(renovation))
                 .findFirst()
                 .orElse(RenovationDto.UNKNOWN);
     }
