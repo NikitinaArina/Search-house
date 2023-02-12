@@ -1,9 +1,6 @@
 package com.telegram.bot.search.house.dto;
 
 import java.util.Arrays;
-import java.util.List;
-
-import static java.util.Arrays.stream;
 
 public enum Month {
     JANUARY("Января"),

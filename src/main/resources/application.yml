@@ -1,3 +1,20 @@
 urls:
   https://saratov.cian.ru/cat.php?deal_type=rent&engine_version=2&offer_type=flat&region=4969&sort=creation_date_desc&type=4,
   https://www.avito.ru/saratov/kvartiry/sdam/na_dlitelnyy_srok-ASgBAgICAkSSA8gQ8AeQUg?s=104
+spring:
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://localhost:5432/shouse
+    username: postgres
+    password: 12345
+    driverClassName: org.postgresql.Driver
+  sql:
+    init:
+      platform: postgres
