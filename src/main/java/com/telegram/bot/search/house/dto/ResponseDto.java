@@ -1,5 +1,7 @@
 package com.telegram.bot.search.house.dto;
 
+import com.telegram.bot.search.house.dto.enums.OwnerDto;
+import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import com.telegram.bot.search.house.entity.Ad;
 import lombok.Data;
 

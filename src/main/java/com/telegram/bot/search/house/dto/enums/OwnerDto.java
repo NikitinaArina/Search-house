@@ -1,4 +1,4 @@
-package com.telegram.bot.search.house.dto;
+package com.telegram.bot.search.house.dto.enums;
 
 public enum OwnerDto {
     OWNER("Собственник"),

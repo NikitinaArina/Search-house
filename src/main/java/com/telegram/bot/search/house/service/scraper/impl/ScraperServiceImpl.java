@@ -1,12 +1,13 @@
-package com.telegram.bot.search.house.service;
+package com.telegram.bot.search.house.service.scraper.impl;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.WaitUntilState;
-import com.telegram.bot.search.house.dto.Month;
-import com.telegram.bot.search.house.dto.OwnerDto;
-import com.telegram.bot.search.house.dto.RenovationDto;
+import com.telegram.bot.search.house.dto.enums.Month;
+import com.telegram.bot.search.house.dto.enums.OwnerDto;
+import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import com.telegram.bot.search.house.dto.ResponseDto;
 import com.telegram.bot.search.house.repository.AdRepository;
+import com.telegram.bot.search.house.service.scraper.ScraperService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import java.util.List;
 import static com.telegram.bot.search.house.constants.Constants.*;
 
 @Service
-public class ScraperServiceImpl {
+public class ScraperServiceImpl implements ScraperService {
     private static final Logger LOGGER = LogManager.getLogger(ScraperServiceImpl.class);
     @Value("${urls}")
     private String[] url;
@@ -30,6 +31,7 @@ public class ScraperServiceImpl {
         this.adRepository = adRepository;
     }
 
+    @Override
     public void getAds() {
         //extractDataFromCian(url[0]);
         extractDataFromAvito(url[1]);

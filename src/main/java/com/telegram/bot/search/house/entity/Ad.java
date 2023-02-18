@@ -1,7 +1,7 @@
 package com.telegram.bot.search.house.entity;
 
-import com.telegram.bot.search.house.dto.OwnerDto;
-import com.telegram.bot.search.house.dto.RenovationDto;
+import com.telegram.bot.search.house.dto.enums.OwnerDto;
+import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
