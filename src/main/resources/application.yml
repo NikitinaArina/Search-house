@@ -18,3 +18,7 @@ spring:
   sql:
     init:
       platform: postgres
+
+telegram:
+  token: 6211351016:AAFHx5QcDBjtabSP_0nOnXQiPMNYVp7nfU4
+  username: "SearchHouse_TGBot"
