@@ -10,4 +10,6 @@ import java.time.LocalDateTime;
 public interface AdRepository extends CrudRepository<Ad, Long> {
     boolean existsByDateCreatedAndTitle(LocalDateTime dateCreated, String title);
 
+    Ad getAdByUsr_Id(Long userId);
+
 }

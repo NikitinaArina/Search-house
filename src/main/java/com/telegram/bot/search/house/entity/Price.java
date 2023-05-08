@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Room {
+public class Price {
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     @Id
@@ -18,5 +18,9 @@ public class Room {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "'from'")
+    private Double from;
 
+    @Column(name = "'to'")
+    private Double to;
 }

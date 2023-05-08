@@ -2,10 +2,11 @@ package com.telegram.bot.search.house.service.scraper.impl;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.WaitUntilState;
+import com.telegram.bot.search.house.dto.ResponseDto;
 import com.telegram.bot.search.house.dto.enums.Month;
 import com.telegram.bot.search.house.dto.enums.OwnerDto;
 import com.telegram.bot.search.house.dto.enums.RenovationDto;
-import com.telegram.bot.search.house.dto.ResponseDto;
+import com.telegram.bot.search.house.dto.enums.RoomDto;
 import com.telegram.bot.search.house.repository.AdRepository;
 import com.telegram.bot.search.house.service.scraper.ScraperService;
 import org.apache.logging.log4j.LogManager;
@@ -58,102 +59,89 @@ public class ScraperServiceImpl implements ScraperService {
                 LOGGER.info(apartLink);
                 responseDTO.setUrl(apartLink);
 
-                BrowserContext browserContext2 = browser.newContext(new Browser.NewContextOptions()
-                        .setUserAgent(USER_AGENT));
-                Page newPage = browserContext2.newPage();
+                Page newPage = browserContext.newPage();
 
-                newPage.navigate(apartLink);
+                newPage.navigate(apartLink, options);
+                synchronized (newPage) {
+                    newPage.wait(10000);
+                }
 
                 String selectorMain = "//main";
-                ElementHandle main;
+                ElementHandle main = newPage.querySelector(selectorMain);
 
-                Locator locator = newPage.locator(selectorMain);
+                if (main != null) {
+                    ElementHandle title = main.querySelector("//div[@data-name='OfferTitle']");
 
-                while (!locator.isVisible()) {
-                    LOGGER.info("Selector main not visible. Page and browser context recreated");
+                    responseDTO.setTitle(title.innerText());
+                    responseDTO.setLocation(main.querySelector("//div[@data-name='Geo']").innerText().replace("На карте", ""));
+                    responseDTO.setPrice(Long.valueOf(main.querySelector("//span[@itemprop='price']").innerText()
+                            .replaceFirst(EMPTY_REGEX, "")
+                            .split(EMPTY_REGEX)[0]));
+                    responseDTO.setSquare(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-value']").get(0).innerText()
+                            .split(EMPTY_REGEX)[0]
+                            .split(COMMA)[0]));
+                    responseDTO.setFloor(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
+                            .filter(f -> f.innerHTML().contains(FLOOR))
+                            .map(ElementHandle::innerText)
+                            .findFirst()
+                            .orElse(UNKNOWN)
+                            .split(SPACE_REGEX)[0]));
+
+                    String rooms = title.innerText().split(COMMA)[0]
+                            .split("-")[0];
+                    responseDTO.setRooms(RoomDto.getByRooms(rooms));
+
+                    String year = main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
+                            .filter(f -> f.innerHTML().contains("Построен"))
+                            .map(m -> m.querySelector("//div[contains(@class, 'value')]"))
+                            .map(ElementHandle::innerText)
+                            .findFirst()
+                            .orElse(ZERO);
+                    responseDTO.setYear(Long.valueOf(year));
+
+                    String date = main.querySelector("//div[@data-name='OfferMeta']//div[contains(@data-name, 'OfferAdded')]").innerText();
+
+                    String[] time = date.split(SPACE_REGEX);
+                    String[] splittedTime = time.length > 2 ? time[2].split(COLON) : time[1].split(COLON);
+                    int hours = Integer.parseInt(splittedTime[0]);
+                    int minutes = Integer.parseInt(splittedTime[1]);
+
+                    setDate(responseDTO, date, time, hours, minutes, true);
+
+                    ElementHandle owner = main.querySelector("//div[@data-name='HomeownerBlockAside']/div[contains(@class, 'title')]");
+
+                    if (owner != null) {
+                        responseDTO.setOwner(OwnerDto.OWNER);
+                    } else
+                        responseDTO.setOwner(OwnerDto.AGENT);
+
+                    ElementHandle kids = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'kids')]");
+                    if (kids != null) {
+                        responseDTO.setKids(kids.innerText().contains(ALLOWED));
+                    } else responseDTO.setKids(false);
+
+                    ElementHandle pets = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'pets')]");
+                    if (pets != null) {
+                        responseDTO.setKids(pets.innerText().contains(ALLOWED));
+                    } else responseDTO.setAnimal(false);
+
+                    String renovation = main.querySelectorAll("//article[@data-name='AdditionalFeaturesGroup']//li").stream()
+                            .filter(f -> f.innerHTML().contains(RENOVATION))
+                            .map(m -> m.querySelector("//span[contains(@class, 'value')]"))
+                            .map(ElementHandle::innerText)
+                            .findFirst()
+                            .orElse(UNKNOWN);
+
+                    responseDTO.setRenovationType(RenovationDto.getByRenovation(renovation));
+
+                    if (!isAdContainsInDB(responseDTO)) adRepository.save(responseDTO.getAd());
+
                     newPage.close();
-                    browserContext2.close();
-                    browserContext2 = browser.newContext(new Browser.NewContextOptions()
-                            .setUserAgent(USER_AGENT));
-                    newPage = browserContext2.newPage();
-                    try {
-                        newPage.navigate(apartLink);
-                    } catch (TimeoutError ignored) {
-
-                    }
-                    locator = newPage.locator(selectorMain);
                 }
-                main = locator.elementHandle();
-
-                ElementHandle title = main.querySelector("//div[@data-name='OfferTitle']");
-
-                responseDTO.setTitle(title.innerText());
-                responseDTO.setLocation(main.querySelector("//div[@data-name='Geo']").innerText().replace("На карте", ""));
-                responseDTO.setPrice(Long.valueOf(main.querySelector("//span[@itemprop='price']").innerText()
-                        .replaceFirst(EMPTY_REGEX, "")
-                        .split(EMPTY_REGEX)[0]));
-                responseDTO.setSquare(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-value']").get(0).innerText()
-                        .split(EMPTY_REGEX)[0]
-                        .split(COMMA)[0]));
-                responseDTO.setFloor(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
-                        .filter(f -> f.innerHTML().contains(FLOOR))
-                        .map(ElementHandle::innerText)
-                        .findFirst()
-                        .orElse(UNKNOWN)
-                        .split(SPACE_REGEX)[0]));
-
-                String rooms = title.innerText().split(COMMA)[0]
-                        .split("-")[0];
-                responseDTO.setRooms(rooms.contains("Студия") ? 0 : Long.parseLong(rooms));
-
-                String year = main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
-                        .filter(f -> f.innerHTML().contains("Построен"))
-                        .map(m -> m.querySelector("//div[contains(@class, 'value')]"))
-                        .map(ElementHandle::innerText)
-                        .findFirst()
-                        .orElse(ZERO);
-                responseDTO.setYear(Long.valueOf(year));
-
-                String date = main.querySelector("//div[@data-name='OfferMeta']//div[contains(@data-name, 'OfferAdded')]").innerText();
-
-                String[] time = date.split(SPACE_REGEX);
-                String[] splittedTime = time.length > 2 ? time[2].split(COLON) : time[1].split(COLON);
-                int hours = Integer.parseInt(splittedTime[0]);
-                int minutes = Integer.parseInt(splittedTime[1]);
-
-                setDate(responseDTO, date, time, hours, minutes, true);
-
-                ElementHandle owner = main.querySelector("//div[@data-name='HomeownerBlockAside']/div[contains(@class, 'title')]");
-
-                if (owner != null) {
-                    responseDTO.setOwner(OwnerDto.OWNER);
-                } else
-                    responseDTO.setOwner(OwnerDto.AGENT);
-
-                ElementHandle kids = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'kids')]");
-                if (kids != null) {
-                    responseDTO.setKids(kids.innerText().contains(ALLOWED));
-                } else responseDTO.setKids(false);
-
-                ElementHandle pets = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'pets')]");
-                if (pets != null) {
-                    responseDTO.setKids(pets.innerText().contains(ALLOWED));
-                } else responseDTO.setAnimal(false);
-
-                String renovation = main.querySelectorAll("//article[@data-name='AdditionalFeaturesGroup']//li").stream()
-                        .filter(f -> f.innerHTML().contains(RENOVATION))
-                        .map(m -> m.querySelector("//span[contains(@class, 'value')]"))
-                        .map(ElementHandle::innerText)
-                        .findFirst()
-                        .orElse(UNKNOWN);
-
-                responseDTO.setRenovationType(RenovationDto.getByRenovation(renovation));
-
-                if (!isAdContainsInDB(responseDTO)) adRepository.save(responseDTO.getAd());
-
-                newPage.close();
             }
             browser.close();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -167,7 +155,7 @@ public class ScraperServiceImpl implements ScraperService {
                     .newPage();
             Page.NavigateOptions options = new Page.NavigateOptions()
                     .setTimeout(30000)
-                    .setWaitUntil(WaitUntilState.COMMIT);
+                    .setWaitUntil(WaitUntilState.LOAD);
             page.navigate(url, options);
 
             List<ElementHandle> ads = page.querySelectorAll("//div[@data-marker='item']");
@@ -208,7 +196,7 @@ public class ScraperServiceImpl implements ScraperService {
                         .orElse(ZERO)
                         .split(SPACE_REGEX)[2];
 
-                responseDTO.setRooms(rooms.contains("студия") ? 0 : Long.parseLong(rooms));
+                responseDTO.setRooms(RoomDto.getByRooms(rooms));
 
                 responseDTO.setRenovationType(RenovationDto.getByRenovation(infoList.stream()
                         .filter(f -> f.innerHTML().contains(RENOVATION))

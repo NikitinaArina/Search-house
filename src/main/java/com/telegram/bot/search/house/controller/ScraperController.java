@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/")
-public class ScaperController {
+public class ScraperController {
     private final ScraperServiceImpl service;
 
     @Autowired
-    public ScaperController(ScraperServiceImpl service) {
+    public ScraperController(ScraperServiceImpl service) {
         this.service = service;
     }
 

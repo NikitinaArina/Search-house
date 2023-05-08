@@ -6,7 +6,7 @@ spring:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -22,3 +22,14 @@ spring:
 telegram:
   token: 6211351016:AAFHx5QcDBjtabSP_0nOnXQiPMNYVp7nfU4
   username: "SearchHouse_TGBot"
+
+jwt:
+  jwtExpirationMs: 86400000
+  refreshTokenExpirationMsec: 7776000000
+  accessTokenCookieName: accessToken
+  refreshTokenCookieName: refreshToken
+server:
+  port: 8088
+
+upload:
+  path: /Users/arinanikitina/IdeaProjects/search.house/src/main/resources/assets

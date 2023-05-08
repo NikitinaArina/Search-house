@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SearchCriteriaRepository extends CrudRepository<SearchCriteria, Long> {
+    SearchCriteria findSearchCriteriaByUser_Id(Long userId);
 }

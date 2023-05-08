@@ -23,8 +23,4 @@ public class Year {
 
     @Column(name = "'to'")
     private Integer to;
-
-    @OneToOne
-    @JoinColumn(name = "search_criteria_id", referencedColumnName = "id", nullable = false)
-    private SearchCriteria searchCriteria;
 }
