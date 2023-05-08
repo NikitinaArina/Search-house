@@ -1,11 +1,13 @@
 package com.telegram.bot.search.house.entity;
 
-import com.telegram.bot.search.house.dto.OwnerDto;
-import com.telegram.bot.search.house.dto.RenovationDto;
+import com.telegram.bot.search.house.dto.enums.OwnerDto;
+import com.telegram.bot.search.house.dto.enums.RenovationDto;
+import com.telegram.bot.search.house.dto.enums.RoomDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@Accessors(chain = true)
 public class Ad {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,10 +25,11 @@ public class Ad {
             title,
             location;
     private Long price,
-            rooms,
             floor,
             year,
             square;
+    @Enumerated(EnumType.STRING)
+    private RoomDto rooms;
     @Enumerated(EnumType.STRING)
     private OwnerDto owner;
     @Enumerated(EnumType.STRING)
@@ -33,4 +37,9 @@ public class Ad {
     private LocalDateTime dateCreated;
     private boolean animal;
     private boolean kids;
+
+    private String filename;
+
+    @ManyToOne
+    private User usr;
 }

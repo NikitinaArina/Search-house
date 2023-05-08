@@ -1,5 +1,8 @@
 package com.telegram.bot.search.house.dto;
 
+import com.telegram.bot.search.house.dto.enums.OwnerDto;
+import com.telegram.bot.search.house.dto.enums.RenovationDto;
+import com.telegram.bot.search.house.dto.enums.RoomDto;
 import com.telegram.bot.search.house.entity.Ad;
 import lombok.Data;
 
@@ -11,10 +14,10 @@ public class ResponseDto {
             title,
             location;
     private Long price,
-            rooms,
             floor,
             year,
             square;
+    private RoomDto rooms;
     private OwnerDto owner;
     private RenovationDto renovationType;
     private LocalDateTime dateCreated;
@@ -22,20 +25,19 @@ public class ResponseDto {
     private boolean kids;
 
     public Ad getAd() {
-        Ad ad = new Ad();
-        ad.setUrl(url);
-        ad.setLocation(location);
-        ad.setTitle(title);
-        ad.setPrice(price);
-        ad.setRooms(rooms);
-        ad.setFloor(floor);
-        ad.setYear(year);
-        ad.setSquare(square);
-        ad.setOwner(owner);
-        ad.setRenovationType(renovationType);
-        ad.setDateCreated(dateCreated);
-        ad.setAnimal(animal);
-        ad.setKids(kids);
-        return ad;
+        return new Ad()
+                .setUrl(url)
+                .setLocation(location)
+                .setTitle(title)
+                .setPrice(price)
+                .setRooms(rooms)
+                .setFloor(floor)
+                .setYear(year)
+                .setSquare(square)
+                .setOwner(owner)
+                .setRenovationType(renovationType)
+                .setDateCreated(dateCreated)
+                .setAnimal(animal)
+                .setKids(kids);
     }
 }

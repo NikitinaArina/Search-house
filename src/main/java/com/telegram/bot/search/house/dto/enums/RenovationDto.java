@@ -1,12 +1,19 @@
-package com.telegram.bot.search.house.dto;
+package com.telegram.bot.search.house.dto.enums;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
 
 public enum RenovationDto {
+    @JsonProperty("Неизвестно")
     UNKNOWN("Неизвестно"),
+    @JsonProperty("Косметический")
     BUDGETARY("Косметический"),
+    @JsonProperty("Евроремонт")
     EURO("Евроремонт"),
+    @JsonProperty("Дизайнерский")
     DESIGNER("Дизайнерский"),
+    @JsonProperty("Без ремонта")
     GRANDMOTHER("Без ремонта");
 
     private String renovation;
