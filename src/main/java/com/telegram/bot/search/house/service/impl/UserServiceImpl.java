@@ -5,6 +5,7 @@ import com.telegram.bot.search.house.dto.JwtResponse;
 import com.telegram.bot.search.house.dto.Token;
 import com.telegram.bot.search.house.dto.request.LoginRequest;
 import com.telegram.bot.search.house.entity.User;
+import com.telegram.bot.search.house.entity.enums.Role;
 import com.telegram.bot.search.house.repository.UserRepository;
 import com.telegram.bot.search.house.service.UserService;
 import com.telegram.bot.search.house.util.CookieUtil;
@@ -12,19 +13,25 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
     private final CookieUtil cookieUtil;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, JwtUtils jwtUtils, CookieUtil cookieUtil) {
+    public UserServiceImpl(UserRepository userRepository, JwtUtils jwtUtils,
+                           CookieUtil cookieUtil, SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
         this.cookieUtil = cookieUtil;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -35,7 +42,6 @@ public class UserServiceImpl implements UserService {
             return userRepository.save(user);
         }
         return userByChatId;
-        //throw new EntityExistsException("User with username " + userByChatId.getUsername() + " already exist");
     }
 
     @Override
@@ -45,12 +51,21 @@ public class UserServiceImpl implements UserService {
         if (userByChatId != null) {
 
             user.setId(userByChatId.getId())
-                    .setPassword(userByChatId.getPassword())
-                    .setRoles(userByChatId.getRoles());
+                    .setPassword(userByChatId.getPassword());
+
+            if (!user.getRoles().contains(Role.USER)) {
+                user.getRoles().addAll(userByChatId.getRoles());
+            }
+            messagingTemplate.convertAndSend("/topic/role-updates", user);
 
             return userRepository.save(user);
         }
         throw new EntityNotFoundException("User with username " + user.getUsername() + " not found");
+    }
+
+    @Override
+    public List<User> getUsers() {
+        return userRepository.findAllByIsActive(true);
     }
 
     @Override
@@ -84,7 +99,8 @@ public class UserServiceImpl implements UserService {
             addRefreshTokenCookie(responseHeaders, newRefreshToken);
         }
 
-        JwtResponse jwtResponse = new JwtResponse(JwtResponse.SuccessFailure.SUCCESS, "Auth successful. Tokens are created in cookie.");
+        JwtResponse jwtResponse = new JwtResponse(JwtResponse.SuccessFailure.SUCCESS, "Auth successful. Tokens are created in cookie.",
+                user.getId(), user.getUsername(), user.getRoles());
         return ResponseEntity.ok().headers(responseHeaders).body(jwtResponse);
 
     }
@@ -109,6 +125,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByChatId(String chatId) {
         return userRepository.findUserByChatId(Long.parseLong(chatId));
+    }
+
+    @Override
+    public User getUserById(Long id) {
+        return userRepository.findUserById(id);
     }
 
     private User getUserByChatId(User user) {

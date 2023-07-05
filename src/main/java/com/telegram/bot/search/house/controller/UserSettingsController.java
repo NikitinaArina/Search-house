@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController("/settings")
-public class SettingsController {
+public class UserSettingsController {
     private final UserSettingsService userSettingsService;
 
     @Autowired
-    public SettingsController(UserSettingsService userSettingsService) {
+    public UserSettingsController(UserSettingsService userSettingsService) {
         this.userSettingsService = userSettingsService;
     }
 

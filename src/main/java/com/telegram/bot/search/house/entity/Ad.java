@@ -23,7 +23,8 @@ public class Ad {
 
     private String url,
             title,
-            location;
+            location,
+            city;
     private Long price,
             floor,
             year,
@@ -41,5 +42,6 @@ public class Ad {
     private String filename;
 
     @ManyToOne
-    private User usr;
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 }

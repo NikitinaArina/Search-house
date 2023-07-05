@@ -2,6 +2,7 @@ package com.telegram.bot.search.house.service.impl;
 
 import com.telegram.bot.search.house.entity.UserSettings;
 import com.telegram.bot.search.house.repository.UserSettingsRepository;
+import com.telegram.bot.search.house.service.UserService;
 import com.telegram.bot.search.house.service.UserSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

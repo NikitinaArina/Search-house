@@ -2,6 +2,7 @@ package com.telegram.bot.search.house.service.scraper.impl;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.WaitUntilState;
+import com.telegram.bot.search.house.constants.CityConstants;
 import com.telegram.bot.search.house.dto.ResponseDto;
 import com.telegram.bot.search.house.dto.enums.Month;
 import com.telegram.bot.search.house.dto.enums.OwnerDto;
@@ -9,6 +10,8 @@ import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import com.telegram.bot.search.house.dto.enums.RoomDto;
 import com.telegram.bot.search.house.repository.AdRepository;
 import com.telegram.bot.search.house.service.scraper.ScraperService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static com.telegram.bot.search.house.constants.Constants.*;
+import static com.telegram.bot.search.house.dto.enums.RenovationDto.GRANDMOTHER;
 
 @Service
 public class ScraperServiceImpl implements ScraperService {
@@ -26,16 +30,51 @@ public class ScraperServiceImpl implements ScraperService {
     @Value("${urls}")
     private String[] url;
     private final AdRepository adRepository;
+    private Counter scrapCounter;
 
     @Autowired
-    public ScraperServiceImpl(AdRepository adRepository) {
+    public ScraperServiceImpl(AdRepository adRepository, MeterRegistry registry) {
         this.adRepository = adRepository;
+        scrapCounter = Counter.builder("scrap_ad_counter")
+                .description("Количество собранных объявлений")
+                .register(registry);
     }
 
     @Override
     public void getAds() {
-        //extractDataFromCian(url[0]);
+        extractDataFromCian(url[0]);
         extractDataFromAvito(url[1]);
+    }
+
+    @Override
+    public boolean checkAd(String url) {
+        boolean isCian = url.contains("cian");
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch();
+            BrowserContext browserContext = browser.newContext(new Browser.NewContextOptions()
+                    .setUserAgent(USER_AGENT));
+            browserContext.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+            Page page = browserContext
+                    .newPage();
+            Page.NavigateOptions options = new Page.NavigateOptions()
+                    .setTimeout(30000)
+                    .setWaitUntil(isCian ? WaitUntilState.DOMCONTENTLOADED : WaitUntilState.LOAD);
+            page.navigate(url, options);
+
+            ElementHandle elementHandle;
+
+            if (isCian) {
+                elementHandle = page.querySelector("//div[@data-name='OfferUnpublished']");
+            } else {
+                elementHandle = page.querySelector("//span[@class='closed-warning-content-_f4_B']");
+            }
+
+            if (elementHandle != null) {
+                adRepository.deleteByUrl(url);
+                return true;
+            }
+        }
+        return false;
     }
 
     private void extractDataFromCian(String url) {
@@ -43,11 +82,12 @@ public class ScraperServiceImpl implements ScraperService {
             Browser browser = playwright.chromium().launch();
             BrowserContext browserContext = browser.newContext(new Browser.NewContextOptions()
                     .setUserAgent(USER_AGENT));
+            browserContext.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
             Page page = browserContext
                     .newPage();
             Page.NavigateOptions options = new Page.NavigateOptions()
                     .setTimeout(30000)
-                    .setWaitUntil(WaitUntilState.LOAD);
+                    .setWaitUntil(WaitUntilState.DOMCONTENTLOADED);
             page.navigate(url, options);
 
             List<ElementHandle> ads = page.locator("article").elementHandles();
@@ -66,40 +106,17 @@ public class ScraperServiceImpl implements ScraperService {
                     newPage.wait(10000);
                 }
 
-                String selectorMain = "//main";
+                String selectorMain = "//div[@data-name='OfferCardPageLayout']";
                 ElementHandle main = newPage.querySelector(selectorMain);
-
                 if (main != null) {
-                    ElementHandle title = main.querySelector("//div[@data-name='OfferTitle']");
+                    ElementHandle title = main.querySelector("//div[@data-name='OfferTitleNew']");
 
                     responseDTO.setTitle(title.innerText());
                     responseDTO.setLocation(main.querySelector("//div[@data-name='Geo']").innerText().replace("На карте", ""));
-                    responseDTO.setPrice(Long.valueOf(main.querySelector("//span[@itemprop='price']").innerText()
-                            .replaceFirst(EMPTY_REGEX, "")
-                            .split(EMPTY_REGEX)[0]));
-                    responseDTO.setSquare(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-value']").get(0).innerText()
-                            .split(EMPTY_REGEX)[0]
-                            .split(COMMA)[0]));
-                    responseDTO.setFloor(Long.valueOf(main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
-                            .filter(f -> f.innerHTML().contains(FLOOR))
-                            .map(ElementHandle::innerText)
-                            .findFirst()
-                            .orElse(UNKNOWN)
-                            .split(SPACE_REGEX)[0]));
 
-                    String rooms = title.innerText().split(COMMA)[0]
-                            .split("-")[0];
-                    responseDTO.setRooms(RoomDto.getByRooms(rooms));
+                    setCity(responseDTO);
 
-                    String year = main.querySelectorAll("//div[@data-testid='object-summary-description-info']").stream()
-                            .filter(f -> f.innerHTML().contains("Построен"))
-                            .map(m -> m.querySelector("//div[contains(@class, 'value')]"))
-                            .map(ElementHandle::innerText)
-                            .findFirst()
-                            .orElse(ZERO);
-                    responseDTO.setYear(Long.valueOf(year));
-
-                    String date = main.querySelector("//div[@data-name='OfferMeta']//div[contains(@data-name, 'OfferAdded')]").innerText();
+                    String date = main.querySelector("//div[@data-name='OfferMetaData']//div[contains(@data-testid, 'metadata-added-date')]").innerText();
 
                     String[] time = date.split(SPACE_REGEX);
                     String[] splittedTime = time.length > 2 ? time[2].split(COLON) : time[1].split(COLON);
@@ -108,41 +125,109 @@ public class ScraperServiceImpl implements ScraperService {
 
                     setDate(responseDTO, date, time, hours, minutes, true);
 
-                    ElementHandle owner = main.querySelector("//div[@data-name='HomeownerBlockAside']/div[contains(@class, 'title')]");
+                    synchronized (newPage) {
+                        newPage.wait(10000);
+                    }
+                    if (!isAdContainsInDB(responseDTO)) {
 
-                    if (owner != null) {
-                        responseDTO.setOwner(OwnerDto.OWNER);
-                    } else
-                        responseDTO.setOwner(OwnerDto.AGENT);
+                        try {
+                            responseDTO.setPrice(Long.valueOf(main.querySelector("//div[@data-name='PriceInfo']").innerText()
+                                    .replaceFirst(EMPTY_REGEX, "")
+                                    .split(EMPTY_REGEX)[0]));
+                            responseDTO.setSquare(Long.valueOf(main.querySelectorAll("//div[@data-name='ObjectFactoidsItem']").stream()
+                                    .filter(f -> f.innerHTML().contains("Общая площадь"))
+                                    .map(ElementHandle::innerText)
+                                    .findFirst()
+                                    .orElse(ZERO)
+                                    .split("Общая площадь")[1]
+                                    .split(EMPTY_REGEX)[0]
+                                    .split("\n")[1]));
+                            responseDTO.setFloor(Long.valueOf(main.querySelectorAll("//div[@data-name='ObjectFactoidsItem']").stream()
+                                    .filter(f -> f.innerHTML().contains(FLOOR))
+                                    .map(ElementHandle::innerText)
+                                    .findFirst()
+                                    .orElse(UNKNOWN)
+                                    .split(FLOOR)[1]
+                                    .split(EMPTY_REGEX)[0]
+                                    .split("\n")[1]
+                                    .split(SPACE_REGEX)[0]));
+                        } catch (NumberFormatException ignored) {
 
-                    ElementHandle kids = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'kids')]");
-                    if (kids != null) {
-                        responseDTO.setKids(kids.innerText().contains(ALLOWED));
-                    } else responseDTO.setKids(false);
+                        }
 
-                    ElementHandle pets = main.querySelector("//ul[@data-name='Tenants']/li[contains(@class, 'pets')]");
-                    if (pets != null) {
-                        responseDTO.setKids(pets.innerText().contains(ALLOWED));
-                    } else responseDTO.setAnimal(false);
+                        String rooms = title.innerText().split(COMMA)[0]
+                                .split("-")[0];
+                        responseDTO.setRooms(RoomDto.getByRooms(rooms));
 
-                    String renovation = main.querySelectorAll("//article[@data-name='AdditionalFeaturesGroup']//li").stream()
-                            .filter(f -> f.innerHTML().contains(RENOVATION))
-                            .map(m -> m.querySelector("//span[contains(@class, 'value')]"))
-                            .map(ElementHandle::innerText)
-                            .findFirst()
-                            .orElse(UNKNOWN);
+                        String year = main.querySelectorAll("//div[@data-name='ObjectFactoidsItem']").stream()
+                                .filter(f -> f.innerHTML().contains("Год постройки"))
+                                .map(ElementHandle::innerText)
+                                .findFirst()
+                                .orElse(ZERO);
+                        try {
+                            responseDTO.setYear(Long.valueOf(year.split("Год постройки")[1]
+                                    .split("\n")[1]));
+                        } catch (Exception error) {
+                            responseDTO.setYear(0L);
+                        }
 
-                    responseDTO.setRenovationType(RenovationDto.getByRenovation(renovation));
+                        ElementHandle owner = main.querySelector("//div[@data-name='HomeownerLayout']/div[contains(@class, 'title')]");
 
-                    if (!isAdContainsInDB(responseDTO)) adRepository.save(responseDTO.getAd());
+                        if (owner != null) {
+                            responseDTO.setOwner(OwnerDto.OWNER);
+                        } else
+                            responseDTO.setOwner(OwnerDto.AGENT);
 
-                    newPage.close();
+                        main.querySelectorAll("//div[@data-name='OfferFactItem']").stream()
+                                .filter(f -> f.innerHTML().contains("Условия проживания"))
+                                .map(ElementHandle::innerText)
+                                .findFirst()
+                                .ifPresent(act -> {
+                                    if (act.contains("можно с детьми и животными")) {
+                                        responseDTO.setKids(true);
+                                        responseDTO.setAnimal(true);
+                                    } else if (act.contains("можно с детьми")) {
+                                        responseDTO.setKids(true);
+                                        responseDTO.setAnimal(false);
+                                    } else if (act.contains("можно с животными")) {
+                                        responseDTO.setAnimal(true);
+                                        responseDTO.setKids(false);
+                                    } else {
+                                        responseDTO.setAnimal(false);
+                                        responseDTO.setKids(false);
+                                    }
+                                });
+
+                        String renovation = main.querySelectorAll("//div[@data-name='OfferSummaryInfoItem']").stream()
+                                .filter(f -> f.innerHTML().contains(RENOVATION))
+                                .map(ElementHandle::innerText)
+                                .findFirst()
+                                .orElse(GRANDMOTHER.getRenovation());
+
+                        responseDTO.setRenovationType(RenovationDto.getByRenovation(renovation.equals(GRANDMOTHER.getRenovation()) ? renovation
+                                : renovation.split("Ремонт")[1].split("\n")[2]));
+
+                        adRepository.save(responseDTO.getAd());
+                        scrapCounter.increment();
+
+                        newPage.close();
+                    }
+                    synchronized (newPage) {
+                        newPage.wait(10000);
+                    }
                 }
             }
             browser.close();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException ignored) {
         }
+    }
+
+    private static void setCity(ResponseDto responseDTO) {
+        CityConstants.getCities().forEach(f -> {
+            if (responseDTO.getLocation().contains(f)) {
+                responseDTO.setCity(f);
+            }
+        });
     }
 
     private void extractDataFromAvito(String url) {
@@ -151,6 +236,7 @@ public class ScraperServiceImpl implements ScraperService {
             Browser.NewContextOptions browserContextOptions = new Browser.NewContextOptions()
                     .setUserAgent(USER_AGENT);
             BrowserContext browserContext = browser.newContext(browserContextOptions);
+            browserContext.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
             Page page = browserContext
                     .newPage();
             Page.NavigateOptions options = new Page.NavigateOptions()
@@ -158,7 +244,20 @@ public class ScraperServiceImpl implements ScraperService {
                     .setWaitUntil(WaitUntilState.LOAD);
             page.navigate(url, options);
 
+            synchronized (page) {
+                page.wait(10000);
+            }
+
             List<ElementHandle> ads = page.querySelectorAll("//div[@data-marker='item']");
+
+            if (ads.size() == 0) {
+                synchronized (page) {
+                    page.wait(5000);
+                }
+                page.reload();
+
+                ads = page.querySelectorAll("//div[@data-marker='item']");
+            }
 
             for (ElementHandle ad : ads) {
                 ResponseDto responseDTO = new ResponseDto();
@@ -176,6 +275,15 @@ public class ScraperServiceImpl implements ScraperService {
                 String selectorMain = "//div[contains(@class, 'style-item-view-page')]";
                 ElementHandle main = newPage.querySelector(selectorMain);
 
+                if (main == null) {
+                    synchronized (newPage) {
+                        newPage.wait(5000);
+                    }
+                    newPage.reload();
+
+                    main = newPage.querySelector(selectorMain);
+                }
+
                 LOGGER.info(apartLink);
 
                 List<ElementHandle> prices = main.querySelectorAll("//span[contains(@class, 'style-price-value-main')]");
@@ -186,6 +294,8 @@ public class ScraperServiceImpl implements ScraperService {
                 responseDTO.setPrice(price.contains("₽") ? Long.valueOf(price.substring(0, price.indexOf("₽"))) : Long.valueOf(price));
                 responseDTO.setLocation(main.querySelector("//div[@itemprop='address']").innerText().replaceAll(NEW_LINE, " "));
                 responseDTO.setTitle(main.querySelector("//div[contains(@class, 'title-info-main')]").innerText());
+
+                setCity(responseDTO);
 
                 List<ElementHandle> infoList = main.querySelectorAll("//li[contains(@class, 'paramsList__item')]");
 
@@ -198,11 +308,15 @@ public class ScraperServiceImpl implements ScraperService {
 
                 responseDTO.setRooms(RoomDto.getByRooms(rooms));
 
+                synchronized (newPage) {
+                    newPage.wait(5000);
+                }
+
                 responseDTO.setRenovationType(RenovationDto.getByRenovation(infoList.stream()
                         .filter(f -> f.innerHTML().contains(RENOVATION))
                         .map(ElementHandle::innerText)
                         .findFirst()
-                        .orElse(UNKNOWN)
+                        .orElse(GRANDMOTHER.getRenovation())
                         .split(SPACE_REGEX)[1]));
 
                 responseDTO.setSquare(Long.valueOf(infoList.stream()
@@ -259,10 +373,16 @@ public class ScraperServiceImpl implements ScraperService {
 
                 setDate(responseDTO, date, time, hours, minutes, false);
 
-                if (!isAdContainsInDB(responseDTO)) adRepository.save(responseDTO.getAd());
+                if (!isAdContainsInDB(responseDTO)) {
+                    adRepository.save(responseDTO.getAd());
+                    scrapCounter.increment();
+                }
+
+                synchronized (newPage) {
+                    newPage.wait(5000);
+                }
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException ignored) {
         }
     }
 

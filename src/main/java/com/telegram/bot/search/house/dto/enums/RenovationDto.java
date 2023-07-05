@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 
 public enum RenovationDto {
-    @JsonProperty("Неизвестно")
-    UNKNOWN("Неизвестно"),
     @JsonProperty("Косметический")
     BUDGETARY("Косметический"),
     @JsonProperty("Евроремонт")
@@ -30,6 +28,6 @@ public enum RenovationDto {
         return Arrays.stream(RenovationDto.values())
                 .filter(f -> f.getRenovation().equalsIgnoreCase(renovation))
                 .findFirst()
-                .orElse(RenovationDto.UNKNOWN);
+                .orElse(RenovationDto.GRANDMOTHER);
     }
 }

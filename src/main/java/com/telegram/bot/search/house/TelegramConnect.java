@@ -1,9 +1,10 @@
 package com.telegram.bot.search.house;
 
-import com.telegram.bot.search.house.controller.AuthController;
-import com.telegram.bot.search.house.dto.request.SignupRequest;
-import com.telegram.bot.search.house.entity.User;
-import com.telegram.bot.search.house.service.UserService;
+import com.telegram.bot.search.house.dto.FavouriteAdDto;
+import com.telegram.bot.search.house.entity.*;
+import com.telegram.bot.search.house.entity.enums.Role;
+import com.telegram.bot.search.house.service.*;
+import com.telegram.bot.search.house.service.impl.ApartmentFinderServiceImpl;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,16 +12,14 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Random;
+import java.util.Collections;
 
+import static com.telegram.bot.search.house.constants.Constants.*;
 import static com.telegram.bot.search.house.dto.enums.Commands.getByCommand;
 
 @Component
@@ -28,16 +27,23 @@ public class TelegramConnect extends TelegramLongPollingBot {
 
     private final String username;
     private final UserService userService;
-    private final AuthController authController;
+    private final TelegramService telegramService;
+    private final FavouritesService favouritesService;
+    private final SearchCriteriaService searchCriteriaService;
+    private final UserSettingsService userSettingsService;
 
     @Autowired
     public TelegramConnect(@Value("${telegram.token}") String botToken,
                            @Value("${telegram.username}") String username,
-                           TelegramBotsApi telegramBotsApi, UserService userService, AuthController authController) throws TelegramApiException {
+                           TelegramBotsApi telegramBotsApi, UserService userService, TelegramService telegramService,
+                           FavouritesService favouritesService, SearchCriteriaService searchCriteriaService, UserSettingsService userSettingsService) throws TelegramApiException {
         super(botToken);
         this.username = username;
         this.userService = userService;
-        this.authController = authController;
+        this.telegramService = telegramService;
+        this.favouritesService = favouritesService;
+        this.searchCriteriaService = searchCriteriaService;
+        this.userSettingsService = userSettingsService;
         telegramBotsApi.registerBot(this);
     }
 
@@ -62,52 +68,123 @@ public class TelegramConnect extends TelegramLongPollingBot {
 
             switch (getByCommand(messageText)) {
                 case START -> {
-                    authController.registerUser(new SignupRequest()
-                            .setUsername(user.getUsername())
-                            .setPassword(user.getChatId() + user.getUsername())
-                            .setChatId(String.valueOf(user.getChatId())));
-                    userService.update(user);
+                    SendMessage message = telegramService.registerUser(update, user);
 
-                    SendMessage message = sendInlineKeyboard(String.valueOf(update.getMessage().getChatId()));
-
-                    try {
-                        execute(message);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
+                    sendMessage(message);
                 }
                 case STOP -> userService.update(user.setIsActive(false));
+                case LANDLORD -> {
+                    user.getRoles().add(Role.LANDLORD);
+                    userService.update(user);
+                }
+                case MENU -> {
+                    InlineKeyboardMarkup inlineKeyboardMarkup = telegramService.sendStartInlineKeyboard(String.valueOf(user.getChatId()));
+                    SendMessage message = new SendMessage();
+                    message.setText("Меню бота");
+                    message.setChatId(user.getChatId());
+                    message.setReplyMarkup(inlineKeyboardMarkup);
+                    sendMessage(message);
+                }
+                default -> {
+                    try {
+                        long notif = Long.parseLong(messageText);
+                        User userByChatId = userService.getUserByChatId(String.valueOf(user.getChatId()));
+                        userSettingsService.saveSettings(new UserSettings().setUser(userByChatId).setMaxNotifications((int) notif));
+                    } catch (NumberFormatException e) {
+                        SendMessage sendMessage = new SendMessage();
+                        sendMessage.setChatId(user.getChatId());
+                        sendMessage.setText("Принимаются только целочисленные значения");
+                        sendMessage(sendMessage);
+                    }
+                }
             }
-        } else {
-            update.hasCallbackQuery();
+        } else if (update.hasCallbackQuery()) {
+            String command = update.getCallbackQuery().getData();
+            SendMessage message = new SendMessage();
+            message.setChatId(update.getCallbackQuery().getFrom().getId());
+
+            User userByChatId = userService.getUserByChatId(message.getChatId());
+
+            EditMessageText editMessageText = new EditMessageText();
+            editMessageText.setChatId(message.getChatId());
+            editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+
+            switch (getByCommand(command)) {
+                case START_SEARCH -> {
+                    telegramService.manageSearch(message.getChatId(), editMessageText, false);
+                    sendEditMessageText(editMessageText);
+                }
+                case STOP_SEARCH -> {
+                    telegramService.manageSearch(message.getChatId(), editMessageText, true);
+                    sendEditMessageText(editMessageText);
+                }
+                case NOTIF -> {
+                    message.setText("Отправьте максимальное количество уведомлений");
+                    sendMessage(message);
+                }
+                case FAV -> {
+                    Favourites favourites = favouritesService.getFavourites(userByChatId.getId());
+                    message.setText("Ваше избранное:");
+                    sendMessage(message);
+                    favourites.getAds().parallelStream().forEach(f -> {
+                        ApartmentFinderServiceImpl.Result result = ApartmentFinderServiceImpl
+                                .getResult(userByChatId.getChatId(), f.getAd(), "Удалить из избранного", DELETEFAV);
+                        SendMessage favs = result.message();
+                        favs.setReplyMarkup(result.inlineKeyboardMarkup());
+                        sendMessageAsync(result.message());
+                    });
+                }
+                default -> {
+                    if (command.matches("\\w+.\\d+")) {
+                        boolean button = command.matches("Button\\w+.\\d+");
+                        String[] split = command.split("\\.");
+                        int i = Integer.parseInt(split[1]);
+
+                        boolean isStopSearch = !split[0].contains("false");
+                        if (command.matches("Next\\w+.\\d+")) {
+                            telegramService.nextSearchCriteria(message.getChatId(), editMessageText, isStopSearch, i);
+                        } else if (command.matches("Back\\w+.\\d+")) {
+                            telegramService.backSearchCriteria(message.getChatId(), editMessageText, isStopSearch, i);
+                        } else if (command.matches(ADDFAV + ".\\d+")) {
+                            favouritesService.addToFavorites(new FavouriteAdDto((long) i, userByChatId.getId()));
+                            message.setText("Объявление добавлено в избранное");
+                        } else if (command.matches(DELETEFAV + ".\\d+")) {
+                            favouritesService.deleteFromFavorites(new FavouriteAdDto((long) i, userByChatId.getId()));
+                            message.setText("Объявление удалено из избранного");
+                        } else if (command.matches(ADDELETE + ".\\d+")) {
+                            boolean isDeleted = favouritesService.deleteAd(new Ad().setId((long) i));
+                            message.setText(isDeleted ? "Спасибо за внимательность, объявление удалено из базы!" : "Объявление все еще актуально");
+                        } else if (button) {
+                            telegramService.selectSearchCriteria(message.getChatId(), message, isStopSearch, i);
+                        }
+
+                        if (button && !isStopSearch) {
+                            sendMessage(message);
+                            SearchCriteria searchCriteria = searchCriteriaService.getSearchCriteria((long) i,
+                                    userService.getUserByChatId(message.getChatId()).getId());
+                            telegramService.findApartmentsByCriteria(Collections.singletonList(searchCriteria), this);
+                        } else if (!button || isStopSearch) {
+                            sendMessage(message);
+                        } else {
+                            sendEditMessageText(editMessageText);
+                        }
+                    } else if (command.equals(MENU)) {
+                        InlineKeyboardMarkup inlineKeyboardMarkup = telegramService.sendStartInlineKeyboard(message.getChatId());
+                        editMessageText.setReplyMarkup(inlineKeyboardMarkup);
+                        editMessageText.setText(MENU + ":");
+                        sendEditMessageText(editMessageText);
+                    }
+                }
+            }
         }
     }
 
-    public SendMessage sendInlineKeyboard(String chatId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText("Inline model below.");
-
-        User user = userService.getUserByChatId(chatId);
-        Random r = new Random();
-        char c = (char) (r.nextInt(26) + 'a');
-
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        List<InlineKeyboardButton> Buttons = new ArrayList<>();
-
-        InlineKeyboardButton criteria = new InlineKeyboardButton("Настроить критерии");
-        criteria.setUrl(String.format("http://127.0.0.1:8080/search-criteria/save?user_id=%s", user.getId() + "__" + c +
-                Base64.getEncoder().encodeToString(user.getChatId().toString().getBytes()) + "--" + c
-                + Base64.getEncoder().encodeToString(user.getUsername().getBytes())));
-        criteria.setCallbackData(chatId);
-        Buttons.add(criteria);
-
-        keyboard.add(Buttons);
-
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        message.setReplyMarkup(inlineKeyboardMarkup);
-        return message;
+    private void sendEditMessageText(EditMessageText editMessageText) {
+        try {
+            execute(editMessageText);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -115,4 +192,19 @@ public class TelegramConnect extends TelegramLongPollingBot {
         return username;
     }
 
+    public void sendMessage(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendMessageAsync(SendMessage message) {
+        try {
+            executeAsync(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

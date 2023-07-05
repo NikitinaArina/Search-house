@@ -6,6 +6,8 @@ import com.telegram.bot.search.house.service.SearchCriteriaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController()
 @RequestMapping("/criteria")
 public class SearchCriteriaController {
@@ -16,13 +18,23 @@ public class SearchCriteriaController {
         this.searchCriteriaService = searchCriteriaService;
     }
 
+    @GetMapping(path = "/{userId}/{criteriaId}")
+    public SearchCriteria getSearchCriteria(@PathVariable String userId, @PathVariable String criteriaId) {
+        return searchCriteriaService.getSearchCriteria(Long.valueOf(criteriaId), Long.valueOf(userId));
+    }
+
     @GetMapping(path = "/{userId}")
-    public SearchCriteria getSearchCriteria(@PathVariable String userId) {
-        return searchCriteriaService.getSearchCriteria(Long.valueOf(userId));
+    public List<SearchCriteria> getAllSearchCriteria(@PathVariable String userId) {
+        return searchCriteriaService.getAllSearchCriteria(Long.valueOf(userId));
     }
 
     @PostMapping("/save")
     public SearchCriteria saveSearchCriteria(@RequestBody SearchCriteriaDto searchCriteriaDto) {
         return searchCriteriaService.save(searchCriteriaDto);
+    }
+
+    @DeleteMapping("/delete/{criteriaId}")
+    public void deleteSearchCriteria(@PathVariable Long criteriaId) {
+        searchCriteriaService.deleteSearchCriteria(criteriaId);
     }
 }

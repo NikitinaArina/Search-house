@@ -3,10 +3,7 @@ package com.telegram.bot.search.house.dto;
 import com.telegram.bot.search.house.dto.enums.OwnerDto;
 import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import com.telegram.bot.search.house.dto.enums.RoomDto;
-import com.telegram.bot.search.house.entity.Floor;
-import com.telegram.bot.search.house.entity.Price;
-import com.telegram.bot.search.house.entity.SearchCriteria;
-import com.telegram.bot.search.house.entity.Year;
+import com.telegram.bot.search.house.entity.*;
 import lombok.Data;
 
 import java.util.List;
@@ -19,7 +16,9 @@ public class SearchCriteriaDto {
     private Price price;
     private List<OwnerDto> owner;
     private List<RenovationDto> renovation;
-    private String location;
+    private List<Location> location;
+    private String city;
+    private String name;
     private Floor floor;
     private Year year;
     private Boolean isChildren;
@@ -31,6 +30,8 @@ public class SearchCriteriaDto {
                 .setFloor(getFloor())
                 .setYear(getYear())
                 .setLocation(getLocation())
+                .setCity(getCity())
+                .setName(getName())
                 .setIsAnimal(getIsAnimal())
                 .setIsChildren(getIsChildren())
                 .setOwner(getOwner())

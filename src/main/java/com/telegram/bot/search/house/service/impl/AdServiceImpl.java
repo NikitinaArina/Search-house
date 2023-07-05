@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,8 +26,13 @@ public class AdServiceImpl implements AdService {
     }
 
     @Override
-    public Ad getAd(Long userId) {
-        return adRepository.getAdByUsr_Id(userId);
+    public Ad getAd(Long userId, Long adId) {
+        return adRepository.getAdByUserIdAndId(userId, adId);
+    }
+
+    @Override
+    public List<Ad> getAllAd(Long userId) {
+        return adRepository.getAllByUserId(userId);
     }
 
     @Override
@@ -48,11 +55,14 @@ public class AdServiceImpl implements AdService {
             ad.setFilename(resultFilename);
         }
 
+        ad.setUser(ad.getUser());
+        ad.setDateCreated(LocalDateTime.now());
+
         return adRepository.save(ad);
     }
 
     @Override
-    public void removeAd(Ad ad) {
-        adRepository.deleteById(ad.getId());
+    public void removeAd(Long adId) {
+        adRepository.deleteById(adId);
     }
 }

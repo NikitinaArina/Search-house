@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 public class ResponseDto {
     private String url,
             title,
-            location;
+            location,
+            city;
     private Long price,
             floor,
             year,
@@ -27,6 +28,7 @@ public class ResponseDto {
     public Ad getAd() {
         return new Ad()
                 .setUrl(url)
+                .setCity(city)
                 .setLocation(location)
                 .setTitle(title)
                 .setPrice(price)
