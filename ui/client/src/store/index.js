@@ -1,9 +1,15 @@
-import { createStore } from "vuex";
+import {createStore} from "vuex";
 import authModule from './modules/auth';
+import createPersistedState from "vuex-persistedstate";
 
 const store = createStore({
-    modules:{
-        auth: authModule
+    plugins: [
+        createPersistedState({
+            storage: window.sessionStorage,
+        }),
+    ],
+    modules: {
+        auth: authModule,
     }
 });
 

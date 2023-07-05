@@ -2,9 +2,14 @@ import httpResource from "@/services/HttpResource";
 
 const ADS = `ads/`
 const SAVE = `save`
+const DELETE = `delete/`
 
 class AdService {
-    async getAd(userId) {
+    async getAd(userId, adId) {
+        return await httpResource.get(ADS + `${userId}` + '/' + `${adId}`)
+    }
+
+    async getAllAd(userId) {
         return await httpResource.get(ADS + `${userId}`)
     }
 
@@ -14,13 +19,21 @@ class AdService {
         const blob = new Blob([json], {
             type: 'application/json'
         });
-        formData.append('file', file, file.name);
+        if (file !== undefined) {
+            formData.append('file', file, file.name);
+        }
         formData.append("ad", blob);
 
         return await httpResource.post(ADS + SAVE, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
+        });
+    }
+
+    async deleteAd(adId) {
+        return await httpResource.delete(ADS + DELETE + `${adId}`).then(res => {
+            console.log(res.status)
         });
     }
 }
