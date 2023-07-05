@@ -12,5 +12,11 @@ public class Constants {
     public static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.38 Safari/537.36";
     public static final String RENOVATION = "Ремонт";
     public static final String FLOOR = "Этаж";
-    public static final String ALLOWED = "Можно";
+    public static final String ADDFAV = "Addfav.";
+    public static final String DELETEFAV = "Deletefav.";
+    public static final String ADDELETE = "Addelete.";
+    public static final String MENU = "Меню";
+    public static final String NEXT = "Дальше";
+    public static final String BACK = "Назад";
+    public static final String CRITERIA = "Критерий";
 }

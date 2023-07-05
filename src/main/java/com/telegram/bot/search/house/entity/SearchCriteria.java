@@ -3,17 +3,13 @@ package com.telegram.bot.search.house.entity;
 import com.telegram.bot.search.house.dto.enums.OwnerDto;
 import com.telegram.bot.search.house.dto.enums.RenovationDto;
 import com.telegram.bot.search.house.dto.enums.RoomDto;
-import com.telegram.bot.search.house.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.hibernate.annotations.Type;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -28,7 +24,7 @@ public class SearchCriteria {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
     private User user;
 
@@ -59,33 +55,16 @@ public class SearchCriteria {
     @JoinColumn(name = "price_id", referencedColumnName = "id")
     private Price price;
 
-    private String location;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "search_criteria_id")
+    private List<Location> location;
+    private String city;
+    private String name;
 
     private Boolean isChildren;
 
     private Boolean isAnimal;
+    private Boolean isActive = false;
 
-    @PrePersist
-    public void prePersist() {
-        if (rooms == null) {
-            rooms = new ArrayList<>(Collections.singletonList(RoomDto.ALL));
-        }
-        if (price == null) {
-            price = new Price();
-        }
-        if (owner == null) {
-            owner = new ArrayList<>(Arrays.asList(OwnerDto.OWNER, OwnerDto.AGENT));
-        }
-        if (renovation == null) {
-            renovation = new ArrayList<>(Arrays.asList(RenovationDto.EURO,
-                    RenovationDto.BUDGETARY, RenovationDto.DESIGNER,
-                    RenovationDto.UNKNOWN, RenovationDto.GRANDMOTHER));
-        }
-        if (floor == null) {
-            floor = new Floor();
-        }
-        if (year == null) {
-            year = new Year();
-        }
-    }
+    private LocalDateTime lastSearch;
 }

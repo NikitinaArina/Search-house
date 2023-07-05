@@ -8,6 +8,12 @@ import java.util.Arrays;
 public enum Commands {
     START("/start"),
     STOP("/stop"),
+    MENU("/menu"),
+    LANDLORD("/landlord"),
+    START_SEARCH("Запуск"),
+    STOP_SEARCH("Стоп"),
+    NOTIF("Уведомления"),
+    FAV("Избранное"),
     DEFAULT("default");
 
     private String command;

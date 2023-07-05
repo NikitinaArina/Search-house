@@ -1,5 +1,6 @@
 package com.telegram.bot.search.house.config.security;
 
+import com.telegram.bot.search.house.entity.enums.Role;
 import com.telegram.bot.search.house.service.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +10,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,6 +62,13 @@ public class SecurityConfig {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/get").permitAll()
+                .requestMatchers("/ads/**").hasAnyAuthority(Role.LANDLORD.name(), Role.ADMIN.name())
+                .requestMatchers("/user/*").hasAuthority(Role.ADMIN.name())
+                .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
+                .requestMatchers("/actuator/prometheus").permitAll()
+                .requestMatchers("/actuator").permitAll()
+                .requestMatchers("/api/auth/info/*").authenticated()
                 .anyRequest().authenticated();
 
         http.authenticationProvider(authenticationProvider());

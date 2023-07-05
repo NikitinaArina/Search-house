@@ -51,17 +51,6 @@ public class AuthController {
         String decryptedAccessToken = SecurityCipher.decrypt(accessToken);
         String decryptedRefreshToken = SecurityCipher.decrypt(refreshToken);
         return userService.login(loginRequest, decryptedAccessToken, decryptedRefreshToken);
-        /*String jwt = jwtUtils.generateJwtToken(authentication);
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        return new JwtResponse(jwt,
-                userDetails.getId(),
-                userDetails.getUsername(),
-                roles);*/
     }
 
     @PostMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -86,5 +75,10 @@ public class AuthController {
         userService.create(user);
 
         return user;
+    }
+
+    @GetMapping("/info/{userId}")
+    public User getUserInfo(@PathVariable Long userId) {
+        return userService.getUserById(userId);
     }
 }

@@ -1,27 +1,29 @@
 urls:
   https://saratov.cian.ru/cat.php?deal_type=rent&engine_version=2&offer_type=flat&region=4969&sort=creation_date_desc&type=4,
-  https://www.avito.ru/saratov/kvartiry/sdam/na_dlitelnyy_srok-ASgBAgICAkSSA8gQ8AeQUg?s=104
+  https://www.avito.ru/saratov/kvartiry/sdam/na_dlitelnyy_srok-ASgBAgICAkSSA8gQ8AeQUg?s=104,
+  https://saratov.cian.ru/cat.php?deal_type=rent&engine_version=2&offer_type=flat&region=5066&sort=creation_date_desc&type=4,
+  https://www.avito.ru/engels/kvartiry/sdam/na_dlitelnyy_srok-ASgBAgICAkSSA8gQ8AeQUg?s=104
 spring:
   jpa:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   datasource:
-    url: jdbc:postgresql://localhost:5432/shouse
-    username: postgres
-    password: 12345
+    url: jdbc:postgresql://localhost:5432/
+    username:
+    password:
     driverClassName: org.postgresql.Driver
   sql:
     init:
       platform: postgres
 
 telegram:
-  token: 6211351016:AAFHx5QcDBjtabSP_0nOnXQiPMNYVp7nfU4
-  username: "SearchHouse_TGBot"
+  token:
+  username:
 
 jwt:
   jwtExpirationMs: 86400000
@@ -31,5 +33,29 @@ jwt:
 server:
   port: 8088
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,mappings,scheduledtasks,httpexchanges
+  server:
+    port: 8088
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 upload:
-  path: /Users/arinanikitina/IdeaProjects/search.house/src/main/resources/assets
+  path:
+
+logging:
+  file:
+    path: ./data/log
+  level:
+    com.telegram.bot.search.house: info
+    org:
+      hibernate: debug

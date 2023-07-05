@@ -1,36 +1,14 @@
+version: '3.7'
+
 services:
-  prometheus:
-    image: prom/prometheus:v2.35.0
-    network_mode: host
-    container_name: prometheus
-    restart: unless-stopped
-    volumes:
-      - ./data/prometheus/config:/etc/prometheus/
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yaml"
-    ports:
-      - 9090:9090
-  #      links:
-  #        - node-exporter:node-exporter
-
-
-  #  node-exporter:
-  #    image: prom/node-exporter:latest
-  #    network_mode: host
-  #    container_name: monitoring_node_exporter
-  #    restart: unless-stopped
-  #    expose:
-  #      - 9100
-
   grafana:
     image: grafana/grafana-oss:8.5.2
     pull_policy: always
-    network_mode: host
     container_name: grafana
     restart: unless-stopped
     user: root
     ports:
-      - 3000:3000 # access grafana url
+      - 3000:3000
     volumes:
       - ./data/grafana:/var/lib/grafana
     environment:
@@ -40,3 +18,39 @@ services:
       # Enabled for logging
       - GF_LOG_MODE=console file
       - GF_LOG_FILTERS=alerting.notifier.slack:debug alertmanager:debug ngalert:debug
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./data/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus:/prometheus
+    networks:
+      monitoring:
+        aliases:
+          - prometheus
+  postgres:
+    image: postgres:13.3
+    environment:
+      POSTGRES_DB: "shouse"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "12345"
+    ports:
+      - "5432:5432"
+  loki:
+    image: grafana/loki:2.2.1
+    container_name: loki-service
+    volumes:
+      - ./data/loki:/etc/loki/
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki.yml
+  promtail:
+    image: grafana/promtail:2.2.1
+    container_name: promtail-service
+    volumes:
+      - ./data/log:/var/log/
+      - ./data/promtail:/etc/promtail/
+    command: -config.file=/etc/promtail/promtail.yml
+networks:
+  monitoring:

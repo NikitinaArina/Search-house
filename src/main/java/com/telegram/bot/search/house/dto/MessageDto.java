@@ -1,2 +1,8 @@
-package com.telegram.bot.search.house.dto;public class Message {
+package com.telegram.bot.search.house.dto;
+
+import lombok.Data;
+
+@Data
+public class MessageDto {
+    private String message;
 }

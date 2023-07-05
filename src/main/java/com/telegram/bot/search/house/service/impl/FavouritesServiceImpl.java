@@ -9,25 +9,30 @@ import com.telegram.bot.search.house.repository.FavouriteAdRepository;
 import com.telegram.bot.search.house.repository.FavouritesRepository;
 import com.telegram.bot.search.house.repository.UserRepository;
 import com.telegram.bot.search.house.service.FavouritesService;
+import com.telegram.bot.search.house.service.scraper.ScraperService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 
 @Service
+@Transactional
 public class FavouritesServiceImpl implements FavouritesService {
     private final FavouritesRepository favouritesRepository;
     private final AdRepository adRepository;
     private final UserRepository userRepository;
     private final FavouriteAdRepository favouriteAdRepository;
+    private final ScraperService scraperService;
 
     @Autowired
     public FavouritesServiceImpl(FavouritesRepository favouritesRepository, AdRepository adRepository, UserRepository userRepository,
-                                 FavouriteAdRepository favouriteAdRepository) {
+                                 FavouriteAdRepository favouriteAdRepository, ScraperService scraperService) {
         this.favouritesRepository = favouritesRepository;
         this.adRepository = adRepository;
         this.userRepository = userRepository;
         this.favouriteAdRepository = favouriteAdRepository;
+        this.scraperService = scraperService;
     }
 
     @Override
@@ -47,7 +52,9 @@ public class FavouritesServiceImpl implements FavouritesService {
                     .setUser(userRepository.findUserById(favouriteAdDto.getUserId()))
                     .setAds(Collections.singletonList(favouriteAd));
         }
-        favouritesRepository.save(fav);
+        Favourites saved = favouritesRepository.save(fav);
+        favouriteAd.setFavourites(saved);
+        favouriteAdRepository.save(favouriteAd);
         return favouriteAd;
     }
 
@@ -55,5 +62,11 @@ public class FavouritesServiceImpl implements FavouritesService {
     public void deleteFromFavorites(FavouriteAdDto favouriteAdDto) {
         Favourites favourites = favouritesRepository.findByUserId(favouriteAdDto.getUserId());
         favouriteAdRepository.deleteByFavourites_IdAndAd_Id(favourites.getId(), favouriteAdDto.getAdId());
+    }
+
+    @Override
+    public boolean deleteAd(Ad ad) {
+        Ad adById = adRepository.getAdById(ad.getId());
+        return scraperService.checkAd(adById.getUrl());
     }
 }

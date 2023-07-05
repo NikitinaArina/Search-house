@@ -3,6 +3,9 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+data/log
+data/grafana
+/prometheus/
 
 ### STS ###
 .apt_generated

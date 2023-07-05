@@ -1,26 +1,25 @@
 package com.telegram.bot.search.house.dto;
 
-import com.telegram.bot.search.house.entity.User;
+import com.telegram.bot.search.house.entity.enums.Role;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 public class JwtResponse {
-    private String token;
-    private String type = "Bearer";
     private Long id;
     private String username;
-    private List<String> roles;
-
+    private Set<Role> roles;
     private SuccessFailure status;
     private String message;
 
     public enum SuccessFailure {
         SUCCESS, FAILURE
     }
-    public JwtResponse(String token, Long id, String username, List<String> roles) {
-        this.token = token;
+
+    public JwtResponse(SuccessFailure status, String message, Long id, String username, Set<Role> roles) {
+        this.status = status;
+        this.message = message;
         this.id = id;
         this.username = username;
         this.roles = roles;
