@@ -1,6 +1,27 @@
 <template>
     <v-container class="d-flex justify-content-center">
-        <v-form class="w-50">
+        <v-form ref="form" class="w-50">
+            <v-row>
+                <v-col>
+                    <v-text-field
+                            v-model="searchCriteria.name"
+                            label="Название"
+                            :rules="[reqValidation]"
+                            outlined></v-text-field>
+                </v-col>
+            </v-row>
+            <v-row>
+                <v-col>
+                    <v-select
+                            v-model="searchCriteria.city"
+                            :items="cityOptions"
+                            label="Город"
+                            small-chips
+                            :rules="[selectValidation]"
+                            outlined
+                    ></v-select>
+                </v-col>
+            </v-row>
             <v-row>
                 <v-col>
                     <v-select
@@ -111,10 +132,14 @@
             </v-row>
             <v-row>
                 <v-col>
-                    <v-text-field
+                    <v-autocomplete
                             v-model="searchCriteria.location"
-                            label="Адрес"
-                            outlined></v-text-field>
+                            :items="locationOptions"
+                            item-text="Адрес"
+                            item-value="Адреса"
+                            placeholder="Выберите районы"
+                            multiple
+                    ></v-autocomplete>
                 </v-col>
             </v-row>
             <v-row>
@@ -140,17 +165,26 @@
 
 <script>
 import SearchCriteriaService from "@/services/SearchCriteriaService";
-import {mapActions, mapGetters} from "vuex";
+import {mapGetters} from "vuex";
+import axios from "axios";
 
 export default {
     data() {
         const currentYear = new Date().getFullYear();
 
-        let userId = null
+        const options = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Token ' + 'e37be6cb21615561f9b941d89e43503176088168'
+            }
+        };
 
         return {
             searchCriteria: {
                 userId: null,
+                name: '',
+                city: '',
                 rooms: [],
                 owner: [],
                 renovation: [],
@@ -166,111 +200,135 @@ export default {
                     from: null,
                     to: null
                 },
-                location: '',
+                location: [],
                 isChildren: false,
                 isAnimal: false,
             },
+            locationOptions: [],
+            cityOptions: ['Саратов', 'Энгельс'],
             ownerOptions: ['Собственник', 'Риелтор'],
             renovationOptions: ['Косметический', 'Евроремонт', 'Дизайнерский', 'Без ремонта'],
             roomsOptions: ['Студия', '1', '2', '3', '4', '5+'],
             currentYear,
-            userId
+            options
         };
     },
     async created() {
-        let query = this.$route.query.user_id.split(/_{2}[a-z]|-{2}[a-z]/)
-
-        this.userId = query[0]
-
-        const payload = {
-            username: atob(query[2]),
-            password: atob(query[1]) + atob(query[2]),
-        };
-
-        await this.login(this.userId, payload)
-
-        await this.getSearchCriteria(this.userId)
+        if (this.$route.params.criteriaId !== undefined) {
+            await this.getSearchCriteria(this.getUserId, this.$route.params.criteriaId)
+        }
+    },
+    watch: {
+        'searchCriteria.city'(newCity, oldCity) {
+            if (newCity !== oldCity) {
+                this.getDataFromServer();
+            }
+        },
     },
     computed: {
         ...mapGetters("auth", {
             getLoginApiStatus: "getLoginApiStatus",
+            getUserId: "getUserId",
         }),
     },
     async mounted() {
-        await this.getSearchCriteria(this.userId);
+        if (this.$route.params.criteriaId !== undefined) {
+            await this.getSearchCriteria(this.getUserId, this.$route.params.criteriaId);
+        }
     },
     methods: {
-        ...mapActions("auth", {
-            actionLoginApi: "loginApi",
-        }),
-        async login(userId, payload) {
-            await this.actionLoginApi(payload);
-            if (this.getLoginApiStatus === "success") {
-                this.$router.push({name: 'search-criteria-save', query: {user_id: this.userId}})
-            } else {
-                alert("failed")
-            }
-        },
-        async getSearchCriteria(userId) {
-            await SearchCriteriaService.getSearchCriteria(userId).then(res => {
+        async getSearchCriteria(userId, criteriaId) {
+            await SearchCriteriaService.getSearchCriteria(userId, criteriaId).then(res => {
                 if (Object.values(res.data).some(x => x !== null && x !== '')) {
                     this.searchCriteria = res.data
+                    this.searchCriteria.location = this.searchCriteria.location.map(m => m.location)
                 }
             })
         },
         yearValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value !== "" && value !== null) {
+                if (value < 0) {
+                    return 'Значение должно быть положительным';
+                }
+                if (value > this.searchCriteria.year.to && this.searchCriteria.year.to !== null) {
+                    return 'Минимальное значение не может быть больше максимального'
+                }
+                if (this.searchCriteria.year.from > value && this.searchCriteria.year.from !== null) {
+                    return 'Максимальное значение не может быть меньше минимального'
+                }
+                if (value < 1800) {
+                    return 'Минимальное значение 1800'
+                }
+                if (value > this.currentYear) {
+                    return 'Максимальное значение ' + this.currentYear
+                }
             }
-            if (value < 0) {
-                return 'Значение должно быть положительным';
-            }
-            if (value > this.searchCriteria.year.to && this.searchCriteria.year.to !== null) {
-                return 'Минимальное значение не может быть больше максимального'
-            }
-            if (this.searchCriteria.year.from > value && this.searchCriteria.year.from !== null) {
-                return 'Максимальное значение не может быть меньше минимального'
-            }
-            if (value < 1800) {
-                return 'Минимальное значение 1800'
-            }
-            if (value > this.currentYear) {
-                return 'Максимальное значение ' + this.currentYear
-            }
+            return true
         },
         priceValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value !== "" && value !== null) {
+                if (value < 0) {
+                    return 'Значение должно быть положительным'
+                }
+                if (value > this.searchCriteria.price.to && this.searchCriteria.price.to !== null) {
+                    return 'Минимальное значение не может быть больше максимального'
+                }
+                if (this.searchCriteria.price.from > value && this.searchCriteria.price.from !== null) {
+                    return 'Максимальное значение не может быть меньше минимального'
+                }
             }
-            if (value < 0) {
-                return 'Значение должно быть положительным'
-            }
-            if (value > this.searchCriteria.price.to && this.searchCriteria.price.to !== null) {
-                return 'Минимальное значение не может быть больше максимального'
-            }
-            if (this.searchCriteria.price.from > value && this.searchCriteria.price.from !== null) {
-                return 'Максимальное значение не может быть меньше минимального'
-            }
+            return true
         },
         floorValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value !== "" && value !== null) {
+                if (value < 0) {
+                    return 'Значение должно быть положительным'
+                }
+                if (value > this.searchCriteria.floor.to && this.searchCriteria.floor.to !== null) {
+                    return 'Минимальное значение не может быть больше максимального'
+                }
+                if (this.searchCriteria.floor.from > value && this.searchCriteria.floor.from !== null) {
+                    return 'Максимальное значение не может быть меньше минимального'
+                }
             }
-            if (value < 0) {
-                return 'Значение должно быть положительным'
+            return true
+        },
+        selectValidation(value) {
+            if (value.length === 0) {
+                return 'Поле обязательное'
             }
-            if (value > this.searchCriteria.floor.to && this.searchCriteria.floor.to !== null) {
-                return 'Минимальное значение не может быть больше максимального'
+            return true
+        },
+        reqValidation(value) {
+            if (value === 0 || value === '' || value === null) {
+                return 'Поле обязательное'
             }
-            if (this.searchCriteria.floor.from > value && this.searchCriteria.floor.from !== null) {
-                return 'Максимальное значение не может быть меньше минимального'
-            }
+            return true
         },
         async submitForm() {
-            this.searchCriteria.userId = this.userId
-            await SearchCriteriaService.saveSearchCriteria(this.searchCriteria)
-            await this.getSearchCriteria(this.userId)
+            if ((await this.$refs.form.validate()).valid) {
+                this.searchCriteria.userId = this.getUserId
+                await SearchCriteriaService.saveSearchCriteria(this.searchCriteria)
+            }
         },
+        getDataFromServer() {
+            axios
+                .post('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address', {
+                    query: this.searchCriteria.city + ' р-н',
+                    count: 20
+                }, this.options)
+                .then(response => {
+                    this.locationOptions = Array.from(new Set(response.data.suggestions.map(m => m.unrestricted_value).filter(f => f.includes('р-н'))
+                        .map(m => m.match(/,\s[а-яА-Я]+\sр-н,*|,\sр-н\s[а-яА-Я]+,*|,\s[а-яА-Я]+\s[а-яА-Я]+\sр-н/gm))
+                        .flatMap(m => m)
+                        .map(m => m.split(' '))
+                        .flatMap(m => m)
+                        .filter(f2 => !f2.includes(',') && !f2.includes('р-н'))));
+                })
+                .catch(error => {
+                    console.error(error);
+                })
+        }
     },
 }
 </script>

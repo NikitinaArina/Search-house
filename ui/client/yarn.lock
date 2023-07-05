@@ -1998,6 +1998,15 @@ autoprefixer@^10.2.4:
     picocolors "^1.0.0"
     postcss-value-parser "^4.2.0"
 
+axios@1.3.6:
+  version "1.3.6"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.3.6.tgz#1ace9a9fb994314b5f6327960918406fa92c6646"
+  integrity sha512-PEcdkk7JcdPiMDkvM4K6ZBRYq9keuVJsToxm2zQIM70Qqo2WHTdJZMXcG9X+RmRp2VPNUQC8W1RAGbgt6b1yMg==
+  dependencies:
+    follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
 axios@^1.3.4:
   version "1.3.4"
   resolved "https://registry.npmjs.org/axios/-/axios-1.3.4.tgz"
@@ -2685,6 +2694,11 @@ deepmerge@^1.5.2:
   resolved "https://registry.npmmirror.com/deepmerge/-/deepmerge-1.5.2.tgz"
   integrity sha512-95k0GDqvBjZavkuvzx/YqVLv/6YYa17fz6ILMSf7neqQITCPbnfEnQvEgMPNjH4kgobe7+WIL0yJEHku+H3qtQ==
 
+deepmerge@^4.2.2:
+  version "4.3.1"
+  resolved "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz"
+  integrity sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==
+
 default-gateway@^6.0.3:
   version "6.0.3"
   resolved "https://registry.npmmirror.com/default-gateway/-/default-gateway-6.0.3.tgz"
@@ -2736,6 +2750,11 @@ detect-node@^2.0.4:
   version "2.1.0"
   resolved "https://registry.npmmirror.com/detect-node/-/detect-node-2.1.0.tgz"
   integrity sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==
+
+diacritics@1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/diacritics/-/diacritics-1.3.0.tgz#3efa87323ebb863e6696cebb0082d48ff3d6f7a1"
+  integrity sha512-wlwEkqcsaxvPJML+rDh/2iS824jbREk6DUMUKkEaSlxdYHeS43cClJtsWglvw2RfeXGm6ohKDqsXteJ5sP5enA==
 
 dir-glob@^3.0.1:
   version "3.0.1"
@@ -3110,6 +3129,11 @@ events@^3.2.0:
   resolved "https://registry.npmmirror.com/events/-/events-3.3.0.tgz"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
 
+eventsource@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/eventsource/-/eventsource-2.0.2.tgz#76dfcc02930fb2ff339520b6d290da573a9e8508"
+  integrity sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==
+
 execa@^0.8.0:
   version "0.8.0"
   resolved "https://registry.npmmirror.com/execa/-/execa-0.8.0.tgz"
@@ -3221,7 +3245,7 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
-faye-websocket@^0.11.3:
+faye-websocket@^0.11.3, faye-websocket@^0.11.4:
   version "0.11.4"
   resolved "https://registry.npmmirror.com/faye-websocket/-/faye-websocket-0.11.4.tgz"
   integrity sha512-CzbClwlXAuiRQAlUyfqPgvPoNKTckTPGfwZV4ZdAhVcP2lh9KUxJg2b5GkE7XbjKQ3YJnQ9z6D9ntLAlB+tP8g==
@@ -4962,6 +4986,11 @@ qs@6.11.0:
   dependencies:
     side-channel "^1.0.4"
 
+querystringify@^2.1.1:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/querystringify/-/querystringify-2.2.0.tgz#3345941b4153cb9d082d8eee4cda2016a9aef7f6"
+  integrity sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==
+
 queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.npmmirror.com/queue-microtask/-/queue-microtask-1.2.3.tgz"
@@ -5337,6 +5366,11 @@ shell-quote@^1.7.3:
   resolved "https://registry.npmmirror.com/shell-quote/-/shell-quote-1.8.0.tgz"
   integrity sha512-QHsz8GgQIGKlRi24yFc6a6lN69Idnx634w49ay6+jA5yFh7a1UY+4Rp6HPx/L/1zcEDPEij8cIsiqR6bQsE5VQ==
 
+shvl@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/shvl/-/shvl-2.0.3.tgz"
+  integrity sha512-V7C6S9Hlol6SzOJPnQ7qzOVEWUQImt3BNmmzh40wObhla3XOYMe4gGiYzLrJd5TFa+cI2f9LKIRJTTKZSTbWgw==
+
 side-channel@^1.0.4:
   version "1.0.4"
   resolved "https://registry.npmmirror.com/side-channel/-/side-channel-1.0.4.tgz"
@@ -5373,6 +5407,17 @@ slice-ansi@^4.0.0:
     ansi-styles "^4.0.0"
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
+
+sockjs-client@^1.6.1:
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/sockjs-client/-/sockjs-client-1.6.1.tgz#350b8eda42d6d52ddc030c39943364c11dcad806"
+  integrity sha512-2g0tjOR+fRs0amxENLi/q5TiJTqY+WXFOzb5UwXndlK6TO3U/mirZznpx6w34HVMoc3g7cY24yC/ZMIYnDlfkw==
+  dependencies:
+    debug "^3.2.7"
+    eventsource "^2.0.2"
+    faye-websocket "^0.11.4"
+    inherits "^2.0.4"
+    url-parse "^1.5.10"
 
 sockjs@^0.3.24:
   version "0.3.24"
@@ -5786,6 +5831,14 @@ uri-js@^4.2.2:
   dependencies:
     punycode "^2.1.0"
 
+url-parse@^1.5.10:
+  version "1.5.10"
+  resolved "https://registry.yarnpkg.com/url-parse/-/url-parse-1.5.10.tgz#9d3c2f736c1d75dd3bd2be507dcc111f1e2ea9c1"
+  integrity sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==
+  dependencies:
+    querystringify "^2.1.1"
+    requires-port "^1.0.0"
+
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.npmmirror.com/util-deprecate/-/util-deprecate-1.0.2.tgz"
@@ -5823,6 +5876,25 @@ vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmmirror.com/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
+
+vue-dadata@^3.0.0-beta.13:
+  version "3.0.0-beta.13"
+  resolved "https://registry.yarnpkg.com/vue-dadata/-/vue-dadata-3.0.0-beta.13.tgz#8d0dd40c079c17e2045ab94e8c2b7f5492cb72bf"
+  integrity sha512-ovcffyvISKC1y1I/n3FxlxHCUpplc7yKJ4Yo2elMEXATkZxxnosuPZ7Qh8fKllUiDUEjy7f5uWs5cgHpqEDzAA==
+  dependencies:
+    axios "1.3.6"
+    vue-debounce "4.0.0"
+    vue-word-highlighter "1.2.3"
+
+vue-debounce@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/vue-debounce/-/vue-debounce-4.0.0.tgz#3f584dabc08a841a0182ab68d19f77f70a416fcc"
+  integrity sha512-+BrcKfLpyDpUJ58ZrAvI35irRCgYHFpnF3NJZwwaz8/kkKmEq6TWPXBIhLh2HQAsUZNwo52K/vQyiEFsJ/1RYA==
+
+vue-demi@0.13.11:
+  version "0.13.11"
+  resolved "https://registry.yarnpkg.com/vue-demi/-/vue-demi-0.13.11.tgz#7d90369bdae8974d87b1973564ad390182410d99"
+  integrity sha512-IR8HoEEGM65YY3ZJYAjMlKygDQn25D5ajNFNoKh9RSDMQtlzCxtfQjdQgv9jjK+m3377SsJXY8ysq8kLCZL25A==
 
 vue-eslint-parser@^8.0.1:
   version "8.3.0"
@@ -5871,6 +5943,14 @@ vue-template-es2015-compiler@^1.9.0:
   resolved "https://registry.npmmirror.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.9.1.tgz"
   integrity sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==
 
+vue-word-highlighter@1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/vue-word-highlighter/-/vue-word-highlighter-1.2.3.tgz#74c455e15b024e3359305561a6b628bb24fc3ab9"
+  integrity sha512-SUJgI94+AepCK88YfkkE+JiyMZFxmkm9kd9xaZdpqbAiBJQ7YtfMTSKp8uPwJp5QhcLbJZEBzGsP/9ffmNb0ow==
+  dependencies:
+    diacritics "1.3.0"
+    vue-demi "0.13.11"
+
 vue@^3.2.47:
   version "3.2.47"
   resolved "https://registry.npmjs.org/vue/-/vue-3.2.47.tgz"
@@ -5883,14 +5963,22 @@ vue@^3.2.47:
     "@vue/shared" "3.2.47"
 
 vuetify@^3.1.12:
-  version "3.1.12"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.1.12.tgz#f3b8a61d176cbfd876f7208ece21e4a1e434ec6a"
-  integrity sha512-6SOMWzNtziDdi/Noeg0l9Q5o20amIuqmj9V5W8fV1nCNdQUZsi6mt9iN+UcfjqwAaALS/z5Nbd4v5OJxy8M4Rw==
+  version "3.2.5"
+  resolved "https://registry.npmjs.org/vuetify/-/vuetify-3.2.5.tgz"
+  integrity sha512-HuLIydRkigGIfqDbwEjFw5LEtWCw8lV4K1isMv/7vAt8n5fns+8kKqVnktIQkfzSxQgPD6Lve/58j4dEKA/vTA==
+
+vuex-persistedstate@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/vuex-persistedstate/-/vuex-persistedstate-4.1.0.tgz"
+  integrity sha512-3SkEj4NqwM69ikJdFVw6gObeB0NHyspRYMYkR/EbhR0hbvAKyR5gksVhtAfY1UYuWUOCCA0QNGwv9pOwdj+XUQ==
+  dependencies:
+    deepmerge "^4.2.2"
+    shvl "^2.0.3"
 
 vuex@^4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/vuex/-/vuex-4.0.2.tgz#f896dbd5bf2a0e963f00c67e9b610de749ccacc9"
-  integrity sha512-M6r8uxELjZIK8kTKDGgZTYX/ahzblnzC4isU1tpmEuOIIKmV+TRdc+H4s8ds2NuZ7wpUTdGRzJRtoj+lI+pc0Q==
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/vuex/-/vuex-4.1.0.tgz"
+  integrity sha512-hmV6UerDrPcgbSy9ORAtNXDr9M4wlNP4pEFKye4ujJF8oqgFFuxDCdOLS3eNoRTtq5O3hoBDh9Doj1bQMYHRbQ==
   dependencies:
     "@vue/devtools-api" "^6.0.0-beta.11"
 
@@ -6053,6 +6141,11 @@ websocket-extensions@>=0.1.1:
   version "0.1.4"
   resolved "https://registry.npmmirror.com/websocket-extensions/-/websocket-extensions-0.1.4.tgz"
   integrity sha512-OqedPIGOfsDlo31UNwYbCFMSaO9m9G/0faIHj5/dZFDMFqPTcx6UwqyOy3COEaEOg/9VsGIpdqn62W5KhoKSpg==
+
+webstomp-client@^1.2.6:
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/webstomp-client/-/webstomp-client-1.2.6.tgz#57e8a044bac0a08bfc3d0e54d43760c2aeefadab"
+  integrity sha512-9HajO6Ki2ViEGIusLZtjM2lcO2VaQUvtXhLQQ4Cm543RLjfTCEgI3sFaiXts3TvfZgrtY/vI/+qUkm2qWD/NVg==
 
 whatwg-fetch@^3.6.2:
   version "3.6.2"

@@ -8,7 +8,7 @@
 import SearchCriteria from "@/components/SearchCriteria";
 
 export default {
-    name: "SearchCriteriaPage",
+    name: "SearchCriteriaFormPage",
     components: {
         SearchCriteria
     }

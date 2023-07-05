@@ -1,13 +1,23 @@
 <template>
     <v-container class="d-flex justify-content-center">
-        <v-form class="w-50">
+        <v-form ref="form" class="w-50" lazy-validation>
+            <v-row>
+                <v-col>
+                    <v-text-field
+                            v-model="ad.title"
+                            label="Название"
+                            :rules="[reqValidation]"
+                            outlined></v-text-field>
+                </v-col>
+            </v-row>
             <v-row>
                 <v-col>
                     <v-select
-                            v-model="ad.owner"
-                            :items="ownerOptions"
-                            label="Владелец"
+                            v-model="ad.city"
+                            :items="cityOptions"
+                            label="Город"
                             small-chips
+                            :rules="[selectValidation]"
                             outlined
                     ></v-select>
                 </v-col>
@@ -15,10 +25,23 @@
             <v-row>
                 <v-col>
                     <v-select
-                            v-model="ad.renovation"
+                            v-model="ad.owner"
+                            :items="ownerOptions"
+                            label="Владелец"
+                            small-chips
+                            :rules="[selectValidation]"
+                            outlined
+                    ></v-select>
+                </v-col>
+            </v-row>
+            <v-row>
+                <v-col>
+                    <v-select
+                            v-model="ad.renovationType"
                             :items="renovationOptions"
                             label="Ремонт"
                             small-chips
+                            :rules="[selectValidation]"
                             outlined
                     ></v-select>
                 </v-col>
@@ -30,6 +53,7 @@
                             :items="roomsOptions"
                             label="Количество комнат"
                             small-chips
+                            :rules="[selectValidation]"
                             outlined
                     ></v-select>
                 </v-col>
@@ -69,10 +93,16 @@
             </v-row>
             <v-row>
                 <v-col>
-                    <v-text-field
-                            v-model="ad.location"
-                            label="Адрес"
-                            outlined></v-text-field>
+                    <v-autocomplete
+                            v-model:search="searchQuery"
+                            :items="addressOptions"
+                            :loading="isLoading"
+                            item-text="Адрес"
+                            item-value="Адреса"
+                            placeholder="Введите адрес"
+                            :rules="[reqValidation]"
+                            @change="saveAddress"
+                    ></v-autocomplete>
                 </v-col>
             </v-row>
             <v-row>
@@ -95,6 +125,8 @@
                             accept="image/*"
                             @change="selectImage"
                             @click:clear="cancelImage"
+                            :rules="[selectValidation]"
+                            required
                     ></v-file-input>
                 </v-col>
             </v-row>
@@ -114,69 +146,75 @@
 
 <script>
 import AdService from "@/services/AdService";
-import {mapActions, mapGetters} from "vuex";
+import {mapGetters} from "vuex";
+import _ from "lodash";
+import axios from "axios";
 
 export default {
     data() {
         const currentYear = new Date().getFullYear();
 
-        let userId = null
+        const options = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Token ' + 'e37be6cb21615561f9b941d89e43503176088168'
+            }
+        };
 
         return {
             currentImage: undefined,
             previewImage: undefined,
+            searchQuery: '',
+            addressOptions: [],
+            selectedAddress: '',
+            isLoading: false,
+            debounceTimeout: null,
             ad: {
-                userId: null,
+                user: {
+                    id: null
+                },
+                city: [],
+                title: null,
                 rooms: [],
                 owner: [],
-                renovation: [],
+                renovationType: [],
                 price: null,
                 floor: null,
                 year: null,
                 location: '',
                 isChildren: false,
                 isAnimal: false,
+                filename: null,
             },
+            token: "e37be6cb21615561f9b941d89e43503176088168",
+            cityOptions: ['Саратов', 'Энгельс'],
             ownerOptions: ['Собственник', 'Риелтор'],
             renovationOptions: ['Косметический', 'Евроремонт', 'Дизайнерский', 'Без ремонта'],
             roomsOptions: ['Студия', '1', '2', '3', '4', '5+'],
             currentYear,
-            userId
+            options
         };
-    },
-    async created() {
-        let query = this.$route.query.user_id.split(/_{2}[a-z]|-{2}[a-z]/)
-
-        this.userId = query[0]
-
-        const payload = {
-            username: atob(query[2]),
-            password: atob(query[1]) + atob(query[2]),
-        };
-
-        await this.login(this.userId, payload)
-
-        await this.getAd(this.userId)
     },
     computed: {
         ...mapGetters("auth", {
             getLoginApiStatus: "getLoginApiStatus",
+            getUserId: "getUserId",
         }),
     },
     async mounted() {
-        await this.getAd(this.userId);
+        if (this.$route.params.adId !== undefined) {
+            await this.getAd(this.getUserId, this.$route.params.adId)
+        }
+    },
+    watch: {
+        searchQuery(newQuery) {
+            this.debouncedSearch(newQuery);
+        },
     },
     methods: {
-        ...mapActions("auth", {
-            actionLoginApi: "loginApi",
-        }),
-        async login(userId, payload) {
-            await this.actionLoginApi(payload);
-            if (this.getLoginApiStatus === "success") {
-                this.$router.push({name: 'ad-save', query: {user_id: this.userId}})
-            } else {
-                alert("failed")
-            }
+        saveAddress(value) {
+            this.ad.location = value.target._value
         },
         selectImage(image) {
             this.currentImage = image.target.files[0]
@@ -185,48 +223,83 @@ export default {
         cancelImage() {
             this.previewImage = undefined
         },
-        async getAd(userId) {
-            await AdService.getAd(userId).then(res => {
+        async getAd(userId, adId) {
+            await AdService.getAd(userId, adId).then(res => {
                 if (Object.values(res.data).some(x => x !== null && x !== '')) {
                     this.ad = res.data
                 }
             })
         },
         yearValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value !== "" && value !== null) {
+                if (value < 0) {
+                    return 'Значение должно быть положительным';
+                }
+                if (value < 1800) {
+                    return 'Минимальное значение 1800'
+                }
+                if (value > this.currentYear) {
+                    return 'Максимальное значение ' + this.currentYear
+                }
             }
-            if (value < 0) {
-                return 'Значение должно быть положительным';
-            }
-            if (value < 1800) {
-                return 'Минимальное значение 1800'
-            }
-            if (value > this.currentYear) {
-                return 'Максимальное значение ' + this.currentYear
-            }
+            return true
         },
         priceValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value === 0 || value === '' || value === null) {
+                return 'Поле обязательное'
             }
             if (value < 0) {
                 return 'Значение должно быть положительным'
             }
         },
         floorValidation(value) {
-            if (value === '' || value === null) {
-                return false
+            if (value === 0 || value === '' || value === null) {
+                return 'Поле обязательное'
             }
             if (value < 0) {
                 return 'Значение должно быть положительным'
             }
         },
-        async submitForm() {
-            this.ad.userId = this.userId
-            await AdService.saveAd(this.ad, this.currentImage)
-            await this.getAd(this.userId)
+        reqValidation(value) {
+            if (value === 0 || value === '' || value === null) {
+                return 'Поле обязательное'
+            }
+            return true
         },
+        selectValidation(value) {
+            if (value.length === 0) {
+                return 'Поле обязательное'
+            }
+        },
+        async submitForm() {
+            if ((await this.$refs.form.validate()).valid) {
+                this.ad.user.id = this.getUserId
+                await AdService.saveAd(this.ad, this.currentImage)
+            }
+        },
+        debouncedSearch: _.debounce(function (newQuery) {
+            if (newQuery.length >= 3) {
+                this.fetchAddressOptions();
+            } else {
+                this.addressOptions = [];
+            }
+        }, 600),
+        fetchAddressOptions() {
+            this.isLoading = true;
+            axios
+                .post('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address', {
+                    query: this.ad.city + ' ' + this.searchQuery,
+                }, this.options)
+                .then(response => {
+                    this.addressOptions = response.data.suggestions.map(m => m.unrestricted_value).filter(f => f.includes('р-н'));
+                })
+                .catch(error => {
+                    console.error(error);
+                })
+                .finally(() => {
+                    this.isLoading = false;
+                });
+        }
     },
 }
 </script>

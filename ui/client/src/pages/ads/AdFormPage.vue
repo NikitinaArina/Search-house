@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import AdForm from "@/components/AdForm.vue";
+import AdForm from "@/components/ads/AdForm.vue";
 export default {
     name: "AdFormPage",
     components: {
